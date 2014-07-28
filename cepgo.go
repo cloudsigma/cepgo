@@ -86,7 +86,7 @@ func fetchViaSerialPort(key string) (interface{}, error) {
 
 	query := fmt.Sprintf(requestPattern, key)
 	if _, err := connection.Write([]byte(query)); err != nil {
-		return result, err
+		return nil, err
 	}
 
 	reader := bufio.NewReader(connection)
