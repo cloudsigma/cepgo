@@ -1,15 +1,18 @@
 package cepgo
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"runtime"
 
 	"github.com/tarm/goserial"
 )
 
-const requestPattern = "<\n%s\n>"
+const (
+	requestPattern = "<\n%s\n>"
+	EOT            = '\x04'
+)
 
 var (
 	SerialPort string = "/dev/ttyS1"
@@ -25,13 +28,19 @@ func init() {
 	}
 }
 
+// The default fetcher makes the connection to the serial port,
+// writes given query and reads until the EOT symbol. Then tries
+// to unmarshal the result to json and returns it. If the
+// unmarshalling fails it's safe to assume the result it's just
+// a string (e.g. the Key() method has been executed) and
+// returns it
 func fetchViaSerialPort(key string) (interface{}, error) {
 	var result interface{}
 
 	config := &serial.Config{Name: SerialPort, Baud: Baud}
 	connection, err := serial.OpenPort(config)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	query := fmt.Sprintf(requestPattern, key)
@@ -39,13 +48,18 @@ func fetchViaSerialPort(key string) (interface{}, error) {
 		return result, err
 	}
 
-	answer, err := ioutil.ReadAll(connection)
+	reader := bufio.NewReader(connection)
+	answer, err := reader.ReadBytes(EOT)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
-	err = json.Unmarshal(answer, result)
-	return result, err
+	usefulAnswer := answer[0 : len(answer)-1]
+	err = json.Unmarshal(usefulAnswer, &result)
+	if err != nil {
+		return string(usefulAnswer), nil
+	}
+	return result, nil
 }
 
 type Cepgo struct {
