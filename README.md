@@ -6,7 +6,7 @@ virtual serial port without bothering with formatting the messages properly nor
 parsing the output with the specific and sometimes confusing shell tools for
 that purpose.
 
-Having the server definition accessible by the VM can ve useful in various
+Having the server definition accessible by the VM can be useful in various
 ways. For example it is possible to easily determine from within the VM, which
 network interfaces are connected to public and which to private network.
 Another use is to pass some data to initial VM setup scripts, like setting the
