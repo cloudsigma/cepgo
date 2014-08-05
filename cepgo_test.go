@@ -1,38 +1,67 @@
 package cepgo
 
 import (
-	"errors"
-	"strings"
+	"encoding/json"
 	"testing"
 )
 
-func fetchMock(key string) (interface{}, error) {
-	context := map[string]interface{}{
-		"cpu": 1000,
+func fetchMock(key string) ([]byte, error) {
+	context := []byte(`{
+		"context": true,
+		"cpu": 4000,
+		"cpu_model": null,
 		"cpus_instead_of_cores": false,
-		"global_context": map[string]interface{}{
-			"some_global_key": "some_global_val",
+		"enable_numa": false,
+		"global_context": {
+			"some_global_key": "some_global_val"
 		},
-		"mem": 1073741824,
-		"meta": map[string]interface{}{
-			"ssh_public_key": "ssh-rsa AAAAB3NzaC1yc2E.../hQ5D5 john@doe",
+		"grantees": [],
+		"hv_relaxed": false,
+		"hv_tsc": false,
+		"jobs": [],
+		"mem": 4294967296,
+		"meta": {
+			"base64_fields": "cloudinit-user-data",
+			"cloudinit-user-data": "I2Nsb3VkLWNvbmZpZwoKaG9zdG5hbWU6IGNvcmVvczE=",
+			"ssh_public_key": "ssh-rsa AAAAB2NzaC1yc2E.../hQ5D5 john@doe"
 		},
-		"name":         "test_server",
-		"smp":          1,
-		"tags":         []string{"much server", "very performance"},
-		"uuid":         "65b2fb23-8c03-4187-a3ba-8b7c919e8890",
-		"vnc_password": "9e84d6cb49e46379",
-	}
+		"name": "coreos",
+		"nics": [
+			{
+				"runtime": {
+					"interface_type": "public",
+					"ip_v4": {
+						"uuid": "31.171.251.74"
+					},
+					"ip_v6": null
+				},
+				"vlan": null
+			}
+		],
+		"smp": 2,
+		"status": "running",
+		"uuid": "20a0059b-041e-4d0c-bcc6-9b2852de48b3"
+	}`)
+
 	if key == "" {
 		return context, nil
-	} else {
-		result, ok := context[strings.Trim(key, "/")]
-		if ok {
-			return result, nil
-		} else {
-			return nil, errors.New("No such key in the context")
-		}
 	}
+
+	var marshalledContext map[string]interface{}
+
+	err := json.Unmarshal(context, &marshalledContext)
+	if err != nil {
+		return nil, err
+	}
+
+	if key[0] == '/' {
+		key = key[1:]
+	}
+	if key[len(key)-1] == '/' {
+		key = key[:len(key)-1]
+	}
+
+	return json.Marshal(marshalledContext[key])
 }
 
 func TestAll(t *testing.T) {
@@ -61,6 +90,8 @@ func TestKey(t *testing.T) {
 	}
 
 	if _, ok := result.(string); !ok {
+		t.Errorf("%#v\n", result)
+
 		t.Error("Fetching the uuid did not return a string")
 	}
 }
@@ -69,14 +100,13 @@ func TestMeta(t *testing.T) {
 	cepgo := new(Cepgo)
 	cepgo.fetcher = fetchMock
 
-	result, err := cepgo.Meta()
+	meta, err := cepgo.Meta()
 	if err != nil {
+		t.Errorf("%#v\n", meta)
 		t.Error(err)
 	}
 
-	if meta, ok := result.(map[string]interface{}); !ok {
-		t.Error("Fetching the meta did not return a map[string]interface{}")
-	} else if _, ok := meta["ssh_public_key"]; !ok {
+	if _, ok := meta["ssh_public_key"]; !ok {
 		t.Error("ssh_public_key is not in the meta")
 	}
 }
@@ -90,9 +120,7 @@ func TestGlobalContext(t *testing.T) {
 		t.Error(err)
 	}
 
-	if meta, ok := result.(map[string]interface{}); !ok {
-		t.Error("Fetching the global context did not return a map[string]interface{}")
-	} else if _, ok := meta["some_global_key"]; !ok {
+	if _, ok := result["some_global_key"]; !ok {
 		t.Error("some_global_key is not in the global context")
 	}
 }
