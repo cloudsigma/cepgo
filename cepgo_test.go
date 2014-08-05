@@ -65,8 +65,7 @@ func fetchMock(key string) ([]byte, error) {
 }
 
 func TestAll(t *testing.T) {
-	cepgo := new(Cepgo)
-	cepgo.fetcher = fetchMock
+	cepgo := NewCepgoFetcher(fetchMock)
 
 	result, err := cepgo.All()
 	if err != nil {
@@ -81,8 +80,7 @@ func TestAll(t *testing.T) {
 }
 
 func TestKey(t *testing.T) {
-	cepgo := new(Cepgo)
-	cepgo.fetcher = fetchMock
+	cepgo := NewCepgoFetcher(fetchMock)
 
 	result, err := cepgo.Key("uuid")
 	if err != nil {
@@ -97,8 +95,7 @@ func TestKey(t *testing.T) {
 }
 
 func TestMeta(t *testing.T) {
-	cepgo := new(Cepgo)
-	cepgo.fetcher = fetchMock
+	cepgo := NewCepgoFetcher(fetchMock)
 
 	meta, err := cepgo.Meta()
 	if err != nil {
@@ -112,8 +109,7 @@ func TestMeta(t *testing.T) {
 }
 
 func TestGlobalContext(t *testing.T) {
-	cepgo := new(Cepgo)
-	cepgo.fetcher = fetchMock
+	cepgo := NewCepgoFetcher(fetchMock)
 
 	result, err := cepgo.GlobalContext()
 	if err != nil {
