@@ -126,7 +126,7 @@ func (c *Cepgo) FetchRaw(key string) ([]byte, error) {
 func (c *Cepgo) Key(key string) (interface{}, error) {
 	var result interface{}
 
-	fetched, err := c.fetcher(key)
+	fetched, err := c.FetchRaw(key)
 	if err != nil {
 		return nil, err
 	}
